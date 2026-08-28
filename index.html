@@ -137,6 +137,69 @@
             background-color: rgba(88, 166, 255, 0.05);
         }
 
+        /* Mobil Uyumlu Oyun Stilleri */
+        .game-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        #gameCanvas {
+            background: #161b22;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            touch-action: none;
+            max-width: 100%;
+            display: block;
+        }
+
+        .mobile-controls {
+            display: flex;
+            gap: 16px;
+            width: 300px;
+            max-width: 100%;
+            justify-content: space-between;
+        }
+
+        .control-btn {
+            flex: 1;
+            padding: 14px;
+            background-color: var(--card-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            user-select: none;
+            -webkit-user-select: none;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        .control-btn:active {
+            background-color: var(--accent-color);
+            color: #0d1117;
+        }
+
+        #restartBtn {
+            display: none;
+            padding: 10px 20px;
+            background-color: var(--accent-color);
+            color: #0d1117;
+            border: none;
+            border-radius: 6px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        #restartBtn:hover {
+            background-color: var(--accent-hover);
+        }
+
         footer {
             margin-top: 60px;
             padding-top: 20px;
@@ -151,7 +214,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>Ali Seni Gördüğüm Yerde Bağırta Çağırta</h1>
+            <h1>Birol Kaynarpınar</h1>
             <div class="tagline">birolkaynarpinar.com</div>
         </header>
 
@@ -180,11 +243,17 @@
 
             <section id="game-section">
                 <h2>Mini Arcade: F1 Dodge</h2>
-                <p>Engellerden kaçmak için <strong>Sol / Sağ Ok</strong> tuşlarını veya <strong>A / D</strong> tuşlarını kullanın.</p>
+                <p>Masaüstünde <strong>Ok Tuşları / A-D</strong>; mobilde <strong>ekrana dokunarak sürükleyin</strong> veya aşağıdaki butonları kullanın.</p>
                 
-                <div style="display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 16px;">
-                    <canvas id="gameCanvas" width="300" height="400" style="background: #1e222b; border: 2px solid var(--border-color); border-radius: 8px;"></canvas>
-                    <button id="restartBtn" style="display: none; padding: 8px 16px; background-color: var(--accent-color); color: #0d1117; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Yeniden Başlat</button>
+                <div class="game-wrapper">
+                    <canvas id="gameCanvas" width="300" height="400"></canvas>
+                    
+                    <button id="restartBtn">YENİDEN BAŞLAT</button>
+
+                    <div class="mobile-controls">
+                        <button class="control-btn" id="btnLeft">◀ SOL</button>
+                        <button class="control-btn" id="btnRight">SAĞ ▶</button>
+                    </div>
                 </div>
             </section>
 
@@ -208,24 +277,64 @@
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
         const restartBtn = document.getElementById("restartBtn");
+        const btnLeft = document.getElementById("btnLeft");
+        const btnRight = document.getElementById("btnRight");
 
         let player = { x: 135, y: 330, width: 30, height: 50, speed: 5 };
         let obstacles = [];
         let score = 0;
         let gameOver = false;
-        let keys = {};
+        let keys = { left: false, right: false };
         let frameCount = 0;
 
+        // Klavye Kontrolleri
         window.addEventListener("keydown", (e) => {
-            keys[e.key] = true;
+            if (["ArrowLeft", "a", "A"].includes(e.key)) keys.left = true;
+            if (["ArrowRight", "d", "D"].includes(e.key)) keys.right = true;
             if (["ArrowLeft", "ArrowRight", " "].includes(e.key)) e.preventDefault();
         });
-        window.addEventListener("keyup", (e) => keys[e.key] = false);
+
+        window.addEventListener("keyup", (e) => {
+            if (["ArrowLeft", "a", "A"].includes(e.key)) keys.left = false;
+            if (["ArrowRight", "d", "D"].includes(e.key)) keys.right = false;
+        });
+
+        // Mobil Buton Kontrolleri
+        const setupMobileButton = (btn, dirKey) => {
+            const start = (e) => { e.preventDefault(); keys[dirKey] = true; };
+            const end = (e) => { e.preventDefault(); keys[dirKey] = false; };
+            btn.addEventListener("touchstart", start, { passive: false });
+            btn.addEventListener("touchend", end, { passive: false });
+            btn.addEventListener("mousedown", start);
+            btn.addEventListener("mouseup", end);
+            btn.addEventListener("mouseleave", end);
+        };
+        setupMobileButton(btnLeft, "left");
+        setupMobileButton(btnRight, "right");
+
+        // Doğrudan Canvas Dokunmatik / Sürükleme Kontrolü
+        let isTouching = false;
+        function handleTouch(e) {
+            if (gameOver) return;
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const touch = e.touches[0] || e.changedTouches[0];
+            const touchX = (touch.clientX - rect.left) * scaleX;
+            
+            player.x = touchX - player.width / 2;
+            if (player.x < 10) player.x = 10;
+            if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10;
+        }
+
+        canvas.addEventListener("touchstart", (e) => { isTouching = true; handleTouch(e); }, { passive: false });
+        canvas.addEventListener("touchmove", (e) => { if (isTouching) handleTouch(e); }, { passive: false });
+        canvas.addEventListener("touchend", () => { isTouching = false; });
 
         function spawnObstacle() {
-            const laneX = [40, 100, 160, 220];
+            const laneX = [30, 95, 160, 225];
             const randomX = laneX[Math.floor(Math.random() * laneX.length)];
-            obstacles.push({ x: randomX, y: -50, width: 30, height: 50, speed: 3 + Math.floor(score / 10) });
+            obstacles.push({ x: randomX, y: -50, width: 30, height: 50, speed: 3 + Math.floor(score / 8) });
         }
 
         function resetGame() {
@@ -233,6 +342,8 @@
             obstacles = [];
             score = 0;
             gameOver = false;
+            keys.left = false;
+            keys.right = false;
             restartBtn.style.display = "none";
             gameLoop();
         }
@@ -243,19 +354,19 @@
             if (gameOver) return;
 
             frameCount++;
-            if (frameCount % 60 === 0) spawnObstacle();
+            if (frameCount % 55 === 0) spawnObstacle();
 
-            if ((keys["ArrowLeft"] || keys["a"] || keys["A"]) && player.x > 20) {
+            if (keys.left && player.x > 15) {
                 player.x -= player.speed;
             }
-            if ((keys["ArrowRight"] || keys["d"] || keys["D"]) && player.x < canvas.width - player.width - 20) {
+            if (keys.right && player.x < canvas.width - player.width - 15) {
                 player.x += player.speed;
             }
 
             for (let i = 0; i < obstacles.length; i++) {
                 obstacles[i].y += obstacles[i].speed;
 
-                // Çarpışma kontrolü
+                // Çarpışma Testi
                 if (
                     player.x < obstacles[i].x + obstacles[i].width &&
                     player.x + player.width > obstacles[i].x &&
@@ -263,7 +374,7 @@
                     player.y + player.height > obstacles[i].y
                 ) {
                     gameOver = true;
-                    restartBtn.style.display = "block";
+                    restartBtn.style.display = "inline-block";
                 }
 
                 if (obstacles[i].y > canvas.height) {
@@ -275,12 +386,13 @@
         }
 
         function draw() {
-            // Pist
+            // Pist Zemin
             ctx.fillStyle = "#161b22";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             // Şeritler
             ctx.strokeStyle = "#30363d";
+            ctx.lineWidth = 2;
             ctx.setLineDash([20, 15]);
             ctx.beginPath();
             ctx.moveTo(100, 0); ctx.lineTo(100, canvas.height);
@@ -291,23 +403,27 @@
             // Oyuncu Aracı
             ctx.fillStyle = "#e3b341";
             ctx.fillRect(player.x, player.y, player.width, player.height);
-            // Ön Kanat
             ctx.fillStyle = "#58a6ff";
-            ctx.fillRect(player.x - 2, player.y, player.width + 4, 8);
+            ctx.fillRect(player.x - 2, player.y, player.width + 4, 8); // Ön kanat
+            ctx.fillStyle = "#0d1117";
+            ctx.fillRect(player.x + 8, player.y + 15, 14, 15); // Kokpit
 
             // Rakip Araçlar
             ctx.fillStyle = "#f85149";
             obstacles.forEach(obs => {
                 ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+                ctx.fillStyle = "#ff7b72";
+                ctx.fillRect(obs.x + 8, obs.y + 15, 14, 15);
+                ctx.fillStyle = "#f85149";
             });
 
             // Skor
             ctx.fillStyle = "#e6edf3";
-            ctx.font = "14px 'JetBrains Mono', monospace";
+            ctx.font = "bold 14px 'JetBrains Mono', monospace";
             ctx.fillText("Skor: " + score, 15, 25);
 
             if (gameOver) {
-                ctx.fillStyle = "rgba(13, 17, 23, 0.85)";
+                ctx.fillStyle = "rgba(13, 17, 23, 0.88)";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
                 ctx.fillStyle = "#f85149";
