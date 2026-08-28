@@ -26,133 +26,6 @@
             padding: 0;
         }
 
-        <script>
-    const canvas = document.getElementById("gameCanvas");
-    const ctx = canvas.getContext("2d");
-    const restartBtn = document.getElementById("restartBtn");
-
-    let player = { x: 135, y: 330, width: 30, height: 50, speed: 5 };
-    let obstacles = [];
-    let score = 0;
-    let gameOver = false;
-    let keys = {};
-    let frameCount = 0;
-
-    window.addEventListener("keydown", (e) => {
-        keys[e.key] = true;
-        if (["ArrowLeft", "ArrowRight", " "].includes(e.key)) e.preventDefault();
-    });
-    window.addEventListener("keyup", (e) => keys[e.key] = false);
-
-    function spawnObstacle() {
-        const laneX = [40, 100, 160, 220];
-        const randomX = laneX[Math.floor(Math.random() * laneX.length)];
-        obstacles.push({ x: randomX, y: -50, width: 30, height: 50, speed: 3 + Math.floor(score / 10) });
-    }
-
-    function resetGame() {
-        player.x = 135;
-        obstacles = [];
-        score = 0;
-        gameOver = false;
-        restartBtn.style.display = "none";
-        gameLoop();
-    }
-
-    restartBtn.addEventListener("click", resetGame);
-
-    function update() {
-        if (gameOver) return;
-
-        frameCount++;
-        if (frameCount % 60 === 0) spawnObstacle();
-
-        if ((keys["ArrowLeft"] || keys["a"] || keys["A"]) && player.x > 20) {
-            player.x -= player.speed;
-        }
-        if ((keys["ArrowRight"] || keys["d"] || keys["D"]) && player.x < canvas.width - player.width - 20) {
-            player.x += player.speed;
-        }
-
-        for (let i = 0; i < obstacles.length; i++) {
-            obstacles[i].y += obstacles[i].speed;
-
-            // Çarpışma kontrolü (AABB Collision)
-            if (
-                player.x < obstacles[i].x + obstacles[i].width &&
-                player.x + player.width > obstacles[i].x &&
-                player.y < obstacles[i].y + obstacles[i].height &&
-                player.y + player.height > obstacles[i].y
-            ) {
-                gameOver = true;
-                restartBtn.style.display = "block";
-            }
-
-            if (obstacles[i].y > canvas.height) {
-                obstacles.splice(i, 1);
-                score++;
-                i--;
-            }
-        }
-    }
-
-    function draw() {
-        // Pist & Çizgiler
-        ctx.fillStyle = "#161b22";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Yol Şeritleri
-        ctx.strokeStyle = "#30363d";
-        ctx.setLineDash([20, 15]);
-        ctx.beginPath();
-        ctx.moveTo(100, 0); ctx.lineTo(100, canvas.height);
-        ctx.moveTo(200, 0); ctx.lineTo(200, canvas.height);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        // Oyuncu Aracı (F1 Sarısı/Yeşili)
-        ctx.fillStyle = "#e3b341";
-        ctx.fillRect(player.x, player.y, player.width, player.height);
-        // Ön Kanat
-        ctx.fillStyle = "#58a6ff";
-        ctx.fillRect(player.x - 2, player.y, player.width + 4, 8);
-
-        // Rakip Araçlar (Kırmızı)
-        ctx.fillStyle = "#f85149";
-        obstacles.forEach(obs => {
-            ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
-        });
-
-        // Skor Tablosu
-        ctx.fillStyle = "#e6edf3";
-        ctx.font = "14px 'JetBrains Mono', monospace";
-        ctx.fillText("Skor: " + score, 15, 25);
-
-        if (gameOver) {
-            ctx.fillStyle = "rgba(13, 17, 23, 0.85)";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            ctx.fillStyle = "#f85149";
-            ctx.font = "bold 20px Inter, sans-serif";
-            ctx.textAlign = "center";
-            ctx.fillText("KAZA YAPTINIZ!", canvas.width / 2, canvas.height / 2 - 10);
-
-            ctx.fillStyle = "#8b949e";
-            ctx.font = "14px 'JetBrains Mono', monospace";
-            ctx.fillText("Final Skoru: " + score, canvas.width / 2, canvas.height / 2 + 20);
-            ctx.textAlign = "left";
-        }
-    }
-
-    function gameLoop() {
-        update();
-        draw();
-        if (!gameOver) requestAnimationFrame(gameLoop);
-    }
-
-    gameLoop();
-</script>
-
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background-color: var(--bg-color);
@@ -306,14 +179,14 @@
             </section>
 
             <section id="game-section">
-    <h2>Mini Arcade: F1 Dodge</h2>
-    <p>Engellerden kaçmak için <strong>Sol / Sağ Ok</strong> tuşlarını veya <strong>A / D</strong> tuşlarını kullanın.</p>
-    
-    <div style="display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 16px;">
-        <canvas id="gameCanvas" width="300" height="400" style="background: #1e222b; border: 2px solid var(--border-color); border-radius: 8px;"></canvas>
-        <button id="restartBtn" style="display: none; padding: 8px 16px; background-color: var(--accent-color); color: #0d1117; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Yeniden Başlat</button>
-    </div>
-</section>
+                <h2>Mini Arcade: F1 Dodge</h2>
+                <p>Engellerden kaçmak için <strong>Sol / Sağ Ok</strong> tuşlarını veya <strong>A / D</strong> tuşlarını kullanın.</p>
+                
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 16px;">
+                    <canvas id="gameCanvas" width="300" height="400" style="background: #1e222b; border: 2px solid var(--border-color); border-radius: 8px;"></canvas>
+                    <button id="restartBtn" style="display: none; padding: 8px 16px; background-color: var(--accent-color); color: #0d1117; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Yeniden Başlat</button>
+                </div>
+            </section>
 
             <section id="links">
                 <h2>Bağlantılar & İletişim</h2>
@@ -329,5 +202,132 @@
             <p>© 2026 Birol Kaynarpınar. Tüm hakları saklıdır.</p>
         </footer>
     </div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const restartBtn = document.getElementById("restartBtn");
+
+        let player = { x: 135, y: 330, width: 30, height: 50, speed: 5 };
+        let obstacles = [];
+        let score = 0;
+        let gameOver = false;
+        let keys = {};
+        let frameCount = 0;
+
+        window.addEventListener("keydown", (e) => {
+            keys[e.key] = true;
+            if (["ArrowLeft", "ArrowRight", " "].includes(e.key)) e.preventDefault();
+        });
+        window.addEventListener("keyup", (e) => keys[e.key] = false);
+
+        function spawnObstacle() {
+            const laneX = [40, 100, 160, 220];
+            const randomX = laneX[Math.floor(Math.random() * laneX.length)];
+            obstacles.push({ x: randomX, y: -50, width: 30, height: 50, speed: 3 + Math.floor(score / 10) });
+        }
+
+        function resetGame() {
+            player.x = 135;
+            obstacles = [];
+            score = 0;
+            gameOver = false;
+            restartBtn.style.display = "none";
+            gameLoop();
+        }
+
+        restartBtn.addEventListener("click", resetGame);
+
+        function update() {
+            if (gameOver) return;
+
+            frameCount++;
+            if (frameCount % 60 === 0) spawnObstacle();
+
+            if ((keys["ArrowLeft"] || keys["a"] || keys["A"]) && player.x > 20) {
+                player.x -= player.speed;
+            }
+            if ((keys["ArrowRight"] || keys["d"] || keys["D"]) && player.x < canvas.width - player.width - 20) {
+                player.x += player.speed;
+            }
+
+            for (let i = 0; i < obstacles.length; i++) {
+                obstacles[i].y += obstacles[i].speed;
+
+                // Çarpışma kontrolü
+                if (
+                    player.x < obstacles[i].x + obstacles[i].width &&
+                    player.x + player.width > obstacles[i].x &&
+                    player.y < obstacles[i].y + obstacles[i].height &&
+                    player.y + player.height > obstacles[i].y
+                ) {
+                    gameOver = true;
+                    restartBtn.style.display = "block";
+                }
+
+                if (obstacles[i].y > canvas.height) {
+                    obstacles.splice(i, 1);
+                    score++;
+                    i--;
+                }
+            }
+        }
+
+        function draw() {
+            // Pist
+            ctx.fillStyle = "#161b22";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Şeritler
+            ctx.strokeStyle = "#30363d";
+            ctx.setLineDash([20, 15]);
+            ctx.beginPath();
+            ctx.moveTo(100, 0); ctx.lineTo(100, canvas.height);
+            ctx.moveTo(200, 0); ctx.lineTo(200, canvas.height);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Oyuncu Aracı
+            ctx.fillStyle = "#e3b341";
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+            // Ön Kanat
+            ctx.fillStyle = "#58a6ff";
+            ctx.fillRect(player.x - 2, player.y, player.width + 4, 8);
+
+            // Rakip Araçlar
+            ctx.fillStyle = "#f85149";
+            obstacles.forEach(obs => {
+                ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+            });
+
+            // Skor
+            ctx.fillStyle = "#e6edf3";
+            ctx.font = "14px 'JetBrains Mono', monospace";
+            ctx.fillText("Skor: " + score, 15, 25);
+
+            if (gameOver) {
+                ctx.fillStyle = "rgba(13, 17, 23, 0.85)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = "#f85149";
+                ctx.font = "bold 20px Inter, sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText("KAZA YAPTINIZ!", canvas.width / 2, canvas.height / 2 - 10);
+
+                ctx.fillStyle = "#8b949e";
+                ctx.font = "14px 'JetBrains Mono', monospace";
+                ctx.fillText("Final Skoru: " + score, canvas.width / 2, canvas.height / 2 + 20);
+                ctx.textAlign = "left";
+            }
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            if (!gameOver) requestAnimationFrame(gameLoop);
+        }
+
+        gameLoop();
+    </script>
 </body>
 </html>
